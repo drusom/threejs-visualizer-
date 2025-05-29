@@ -10,22 +10,25 @@ import * as THREE from 'three';
 // Texture loader instance
 const textureLoader = new THREE.TextureLoader();
 
+// Get base URL for proper path resolution in both dev and production
+const baseUrl = import.meta.env.BASE_URL;
+
 // Define texture paths
 export const TEXTURE_PATHS = {
   // Roof textures
-  ROOF_DIFFUSE: '/textures/roof/roof_diffuse.jpg',
-  ROOF_NORMAL: '/textures/roof/roof_normal.jpg',
-  ROOF_ROUGHNESS: '/textures/roof/roof_roughness.jpg',
+  ROOF_DIFFUSE: `${baseUrl}textures/roof/roof_diffuse.jpg`,
+  ROOF_NORMAL: `${baseUrl}textures/roof/roof_normal.jpg`,
+  ROOF_ROUGHNESS: `${baseUrl}textures/roof/roof_roughness.jpg`,
   
   // Panel textures
-  PANELS_DIFFUSE: '/textures/panels/panels_diffuse.jpg',
-  PANELS_NORMAL: '/textures/panels/panels_normal.jpg',
-  PANELS_ROUGHNESS: '/textures/panels/panels_roughness.jpg',
+  PANELS_DIFFUSE: `${baseUrl}textures/panels/panels_diffuse.jpg`,
+  PANELS_NORMAL: `${baseUrl}textures/panels/panels_normal.jpg`,
+  PANELS_ROUGHNESS: `${baseUrl}textures/panels/panels_roughness.jpg`,
   
   // Flooring textures
-  FLOORING_DIFFUSE: '/textures/flooring/flooring_diffuse.jpg',
-  FLOORING_NORMAL: '/textures/flooring/flooring_normal.jpg',
-  FLOORING_ROUGHNESS: '/textures/flooring/flooring_roughness.jpg',
+  FLOORING_DIFFUSE: `${baseUrl}textures/flooring/flooring_diffuse.jpg`,
+  FLOORING_NORMAL: `${baseUrl}textures/flooring/flooring_normal.jpg`,
+  FLOORING_ROUGHNESS: `${baseUrl}textures/flooring/flooring_roughness.jpg`,
 };
 
 // Texture cache to avoid reloading
