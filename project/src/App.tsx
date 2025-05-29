@@ -8,11 +8,6 @@ import { WarehouseSection as SectionType } from './types';
 import { useGoogleAuth } from './hooks/useGoogleAuth';
 import { useGoogleSheetsData } from './hooks/useGoogleSheetsData';
 
-// Preload models (place this outside the App component function, at the top level of the module)
-useGLTF.preload('/models/roof.glb');
-useGLTF.preload('/models/panels.glb');
-useGLTF.preload('/models/flooring.glb');
-
 // Replace 'YOUR_GOOGLE_SHEET_ID_HERE' with your actual ID
 const SPREADSHEET_ID = '1SLKorpilvUgBvH_Yz-fyQdcNdqvvJdAGhV0Uqt9RTFQ';
 const RANGE = 'Sheet1!A:B'; // Adjust this range based on your sheet's structure
@@ -26,6 +21,14 @@ function App() {
     isSignedIn,
     !isAuthLoading
   );
+
+  // Preload models with correct base URL
+  useEffect(() => {
+    const baseUrl = import.meta.env.BASE_URL;
+    useGLTF.preload(`${baseUrl}models/roof.glb`);
+    useGLTF.preload(`${baseUrl}models/panels.glb`);
+    useGLTF.preload(`${baseUrl}models/flooring.glb`);
+  }, []);
 
   // Log the raw data from the hook
   useEffect(() => {

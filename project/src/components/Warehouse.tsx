@@ -20,10 +20,13 @@ export const Warehouse: React.FC<WarehouseProps> = ({
 }) => {
   const groupRef = useRef<Group>(null);
   
+  // Use BASE_URL to ensure models load from correct path in both dev and production
+  const baseUrl = import.meta.env.BASE_URL;
+  
   // Load GLTF models with error handling
-  const { nodes: roofNodes, materials: roofMaterials } = useGLTF('/models/roof.glb');
-  const { nodes: panelsNodes, materials: panelsMaterials } = useGLTF('/models/panels.glb');
-  const { nodes: flooringNodes, materials: flooringMaterials } = useGLTF('/models/flooring.glb');
+  const { nodes: roofNodes, materials: roofMaterials } = useGLTF(`${baseUrl}models/roof.glb`);
+  const { nodes: panelsNodes, materials: panelsMaterials } = useGLTF(`${baseUrl}models/panels.glb`);
+  const { nodes: flooringNodes, materials: flooringMaterials } = useGLTF(`${baseUrl}models/flooring.glb`);
 
   const [roofHovered, setRoofHovered] = useState(false);
   const [panelsHovered, setPanelsHovered] = useState(false);
