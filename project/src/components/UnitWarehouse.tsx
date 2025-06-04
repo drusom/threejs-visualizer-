@@ -39,6 +39,14 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   
   const baseUrl = import.meta.env.BASE_URL;
 
+  // Preload models when component mounts with correct base URL
+  useEffect(() => {
+    // Preload all models with correct base URL
+    GLB_FILES.forEach(fileName => {
+      useGLTF.preload(`${baseUrl}models/${fileName}`);
+    });
+  }, [baseUrl]);
+
   // Load all GLB models
   useEffect(() => {
     const loadAllModels = async () => {
@@ -199,9 +207,4 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
       ))}
     </group>
   );
-};
-
-// Preload all models with correct base URL for GitHub Pages
-GLB_FILES.forEach(fileName => {
-  useGLTF.preload(`${import.meta.env.BASE_URL}models/${fileName}`);
-}); 
+}; 

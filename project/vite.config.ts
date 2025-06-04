@@ -16,6 +16,7 @@ export default defineConfig(({ command }) => {
 
   // Only set base path for production builds (GitHub Pages)
   // During local development, keep base as '/' so assets load correctly
+  // This ensures models load from /threejs-visualizer-/models/ in production
   if (command === 'build') {
     config.base = '/threejs-visualizer-/';
   }
