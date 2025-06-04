@@ -39,6 +39,16 @@ jobs:
       working-directory: ./project
       run: npm run build
 
+    - name: List built files (debug)
+      working-directory: ./project
+      run: |
+        echo "Contents of dist folder:"
+        ls -la dist/
+        echo "Contents of dist/models folder:"
+        ls -la dist/models/ || echo "models folder not found"
+        echo "First few model files:"
+        ls dist/models/*.glb | head -5 || echo "no GLB files found"
+
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
