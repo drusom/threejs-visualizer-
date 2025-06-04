@@ -199,27 +199,6 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Debug info - temporary */}
-      {debugUrls.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          background: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '10px',
-          fontSize: '12px',
-          maxHeight: '200px',
-          overflow: 'auto',
-          zIndex: 1000
-        }}>
-          <div>Base URL: {baseUrl}</div>
-          <div>First model URL: {debugUrls[0]}</div>
-          <div>Total models: {GLB_FILES.length}</div>
-          <div>Loaded: {loadedModels.length}</div>
-        </div>
-      )}
-
       {/* Base plane */}
       <mesh receiveShadow position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[30, 30]} />
