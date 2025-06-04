@@ -1,5 +1,6 @@
 name: Deploy Vite App to GitHub Pages
 
+# Updated to ensure latest deployment works properly
 on:
   push:
     branches:
