@@ -21,11 +21,12 @@ const isBridgeFile = (fileName: string): boolean => {
 
 // List of all GLB files to load
 const GLB_FILES = [
-  'a bridge.glb', 'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
-  'b bridge.glb', 'b1.glb', 'b2.glb',
-  'c bridge 1.glb', 'c bridge 2.glb', 'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 
-  'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
-  'e1.glb', 'e2.glb', 'e3.glb'
+  'a1.glb' // Test with just one file first
+  // 'a bridge.glb', 'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
+  // 'b bridge.glb', 'b1.glb', 'b2.glb',
+  // 'c bridge 1.glb', 'c bridge 2.glb', 'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 
+  // 'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
+  // 'e1.glb', 'e2.glb', 'e3.glb'
 ];
 
 export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({ 
