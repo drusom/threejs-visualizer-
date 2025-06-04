@@ -201,7 +201,7 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   );
 };
 
-// Preload all models
+// Preload all models with correct base URL for GitHub Pages
 GLB_FILES.forEach(fileName => {
-  useGLTF.preload(`/models/${fileName}`);
+  useGLTF.preload(`${import.meta.env.BASE_URL}models/${fileName}`);
 }); 
