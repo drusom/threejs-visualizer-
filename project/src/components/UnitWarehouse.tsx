@@ -46,7 +46,7 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
     const urls: string[] = [];
     // Preload all models with correct base URL
     GLB_FILES.forEach(fileName => {
-      const modelUrl = `${baseUrl}models/${fileName}`;
+      const modelUrl = `${baseUrl}${fileName}`;
       urls.push(modelUrl);
       console.log(`Preloading model: ${modelUrl}`);
       useGLTF.preload(modelUrl);
@@ -61,7 +61,7 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
       
       for (const fileName of GLB_FILES) {
         try {
-          const modelUrl = `${baseUrl}models/${fileName}`;
+          const modelUrl = `${baseUrl}${fileName}`;
           console.log(`Loading model from: ${modelUrl}`);
           
           // Use the useGLTF hook result directly
