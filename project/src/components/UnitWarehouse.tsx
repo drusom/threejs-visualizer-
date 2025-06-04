@@ -43,7 +43,9 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   useEffect(() => {
     // Preload all models with correct base URL
     GLB_FILES.forEach(fileName => {
-      useGLTF.preload(`${baseUrl}models/${fileName}`);
+      const modelUrl = `${baseUrl}models/${fileName}`;
+      console.log(`Preloading model: ${modelUrl}`);
+      useGLTF.preload(modelUrl);
     });
   }, [baseUrl]);
 
@@ -54,8 +56,11 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
       
       for (const fileName of GLB_FILES) {
         try {
+          const modelUrl = `${baseUrl}models/${fileName}`;
+          console.log(`Loading model from: ${modelUrl}`);
+          
           // Use the useGLTF hook result directly
-          const result = useGLTF(`${baseUrl}models/${fileName}`);
+          const result = useGLTF(modelUrl);
           if (!result || !result.scene) {
             console.warn(`Failed to load ${fileName}: missing scene`);
             continue;
