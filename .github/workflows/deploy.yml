@@ -1,6 +1,7 @@
 name: Deploy Vite App to GitHub Pages
 
 # Updated to ensure latest deployment works properly
+# Force deploy at 2025-06-04 16:45 UTC
 on:
   push:
     branches:
