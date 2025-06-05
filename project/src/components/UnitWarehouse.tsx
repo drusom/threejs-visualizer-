@@ -21,7 +21,8 @@ const isBridgeFile = (fileName: string): boolean => {
 
 // Simple test component for loading one model
 const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => void }> = ({ fileName, onLoad }) => {
-  const modelUrl = `/models/${fileName}`;
+  const baseUrl = import.meta.env.BASE_URL;
+  const modelUrl = `${baseUrl}models/${fileName}`;
   const { scene } = useGLTF(modelUrl);
   
   useEffect(() => {
