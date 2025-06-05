@@ -49,12 +49,16 @@ function App() {
   );
 
   // Use fallback data if Google Sheets fails or is empty
-  const effectiveUnitData = Object.keys(unitData).length > 0 ? unitData : FALLBACK_UNIT_DATA;
+  const hasValidUnitData = unitData && Object.keys(unitData).length > 0;
+  const effectiveUnitData = hasValidUnitData ? unitData : FALLBACK_UNIT_DATA;
 
   // Log unit data for debugging
   useEffect(() => {
-    console.log("Unit data:", effectiveUnitData);
-  }, [effectiveUnitData]);
+    console.log("Raw unitData from Google Sheets:", unitData);
+    console.log("Has valid unit data:", hasValidUnitData);
+    console.log("Using effective unit data:", effectiveUnitData);
+    console.log("Number of units available:", Object.keys(effectiveUnitData).length);
+  }, [unitData, hasValidUnitData, effectiveUnitData]);
 
   // Log selected unit when it changes
   useEffect(() => {

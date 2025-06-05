@@ -46,12 +46,14 @@ export const useUnitData = (
         setData(unitDataMap);
         console.log('Unit data fetched:', unitDataMap);
       } else {
-        setData({});
+        // Don't clear data if no values - let App component handle fallback
+        console.log('No data values found in Google Sheets response');
       }
     } catch (err: any) {
       console.error("Error fetching unit data:", err);
       setError(err.message || "Failed to fetch unit data.");
-      setData({});
+      // Don't clear data on error - let App component handle fallback
+      console.log('Using fallback data due to Google Sheets error');
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export const useUnitData = (
     if (isSignedIn && isGapiReady) {
       fetchUnitData();
     } else {
-      setData({});
+      // Don't clear data when not ready - let App component handle fallback
       setLoading(false);
     }
   }, [isSignedIn, isGapiReady, fetchUnitData]);
