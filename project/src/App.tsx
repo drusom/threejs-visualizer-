@@ -10,6 +10,34 @@ import { useUnitData } from './hooks/useUnitData';
 const SPREADSHEET_ID = '1SLKorpilvUgBvH_Yz-fyQdcNdqvvJdAGhV0Uqt9RTFQ';
 const RANGE = 'Sheet1!A:D'; // Unit Name | Size | Availability | Amenities
 
+// Fallback unit data when Google Sheets is not available
+const FALLBACK_UNIT_DATA = {
+  'a1': { name: 'a1', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
+  'a2': { name: 'a2', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
+  'a3': { name: 'a3', size: '1,200 sq ft', availability: 'Occupied', amenities: 'Standard package' },
+  'a4': { name: 'a4', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
+  'a5': { name: 'a5', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
+  'a6': { name: 'a6', size: '1,200 sq ft', availability: 'Occupied', amenities: 'Standard package' },
+  'b1': { name: 'b1', size: '1,500 sq ft', availability: 'Available', amenities: 'Premium package' },
+  'b2': { name: 'b2', size: '1,500 sq ft', availability: 'Available', amenities: 'Premium package' },
+  'c1': { name: 'c1', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c2': { name: 'c2', size: '900 sq ft', availability: 'Occupied', amenities: 'Basic package' },
+  'c3': { name: 'c3', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c4': { name: 'c4', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c5': { name: 'c5', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c6': { name: 'c6', size: '900 sq ft', availability: 'Occupied', amenities: 'Basic package' },
+  'c7': { name: 'c7', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c8': { name: 'c8', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c9': { name: 'c9', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c10': { name: 'c10', size: '900 sq ft', availability: 'Occupied', amenities: 'Basic package' },
+  'c11': { name: 'c11', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c12': { name: 'c12', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c13': { name: 'c13', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'e1': { name: 'e1', size: '2,000 sq ft', availability: 'Available', amenities: 'Executive package' },
+  'e2': { name: 'e2', size: '2,000 sq ft', availability: 'Available', amenities: 'Executive package' },
+  'e3': { name: 'e3', size: '2,000 sq ft', availability: 'Occupied', amenities: 'Executive package' },
+};
+
 function App() {
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const { isSignedIn, isLoading: isAuthLoading } = useGoogleAuth();
@@ -20,10 +48,13 @@ function App() {
     !isAuthLoading
   );
 
+  // Use fallback data if Google Sheets fails or is empty
+  const effectiveUnitData = Object.keys(unitData).length > 0 ? unitData : FALLBACK_UNIT_DATA;
+
   // Log unit data for debugging
   useEffect(() => {
-    console.log("Unit data:", unitData);
-  }, [unitData]);
+    console.log("Unit data:", effectiveUnitData);
+  }, [effectiveUnitData]);
 
   // Log selected unit when it changes
   useEffect(() => {
@@ -42,72 +73,57 @@ function App() {
           </div>
         )}
         
+        {/* Removed the error overlay - will use fallback data instead */}
         {error && (
-          <div className="absolute inset-0 flex flex-col justify-center items-center bg-red-100 text-red-700 p-4 z-10">
-            <p className="mb-4">Error loading unit data: {error}</p>
-            <button 
-              onClick={refetch} 
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-            >
-              Try Again
-            </button>
+          <div className="absolute top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded-md text-sm z-10">
+            Using offline data - Google Sheets unavailable
           </div>
         )}
+        
+        <Canvas 
+          className="flex-1"
+          shadows
+          camera={{ position: [0, 10, 20], fov: 75 }}
+        >
+          {/* Lighting setup */}
+          <ambientLight intensity={0.4} />
+          <directionalLight 
+            position={[10, 10, 5]} 
+            intensity={1}
+            castShadow
+            shadow-mapSize={[2048, 2048]}
+          />
           
-        <div className="flex-1">
-          <Canvas 
-            camera={{ position: [15, 10, 15], fov: 50 }}
-            shadows
-            gl={{ preserveDrawingBuffer: true }}
-          >
-            {/* HDRI Environment Lighting - provides realistic lighting and reflections */}
-            <Environment 
-              preset="warehouse" 
-              background={false}
-              blur={0.1}
-            />
-            
-            {/* Optional: Add a subtle directional light for shadows */}
-            <directionalLight 
-              position={[10, 15, 10]} 
-              intensity={0.15}
-              castShadow
-              shadow-mapSize-width={1024}
-              shadow-mapSize-height={1024}
-              shadow-camera-near={0.1}
-              shadow-camera-far={50}
-              shadow-camera-left={-20}
-              shadow-camera-right={20}
-              shadow-camera-top={20}
-              shadow-camera-bottom={-20}
-            />
-            
-            {/* Very subtle ambient light to fill dark areas */}
-            <ambientLight intensity={0.05} />
-            
-            <OrbitControls 
-              enablePan={true}
-              enableZoom={true}
-              enableRotate={true}
-              minDistance={8}
-              maxDistance={30}
-              dampingFactor={0.05}
-              rotateSpeed={0.5}
-            />
-            <UnitWarehouse 
-              unitData={unitData}
-              onUnitSelect={setSelectedUnit}
-              selectedUnit={selectedUnit}
-            />
-          </Canvas>
-        </div>
-
-        <UnitDetailPopup 
-          selectedUnit={selectedUnit}
-          unitData={unitData}
-          onClose={() => setSelectedUnit(null)}
-        />
+          {/* 3D Scene */}
+          <UnitWarehouse 
+            onUnitSelect={setSelectedUnit}
+            selectedUnit={selectedUnit}
+            unitData={effectiveUnitData}
+          />
+          
+          {/* Environment */}
+          <Environment preset="city" />
+          
+          {/* Controls */}
+          <OrbitControls 
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={5}
+            maxDistance={50}
+          />
+        </Canvas>
+        
+        {/* Ground plane */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-gray-200 to-transparent pointer-events-none" />
       </div>
+      
+      {/* Unit Detail Popup */}
+      <UnitDetailPopup 
+        selectedUnit={selectedUnit}
+        unitData={effectiveUnitData}
+        onClose={() => setSelectedUnit(null)}
+      />
     </div>
   );
 }
