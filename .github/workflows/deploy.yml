@@ -1,10 +1,11 @@
 name: Deploy Vite App to GitHub Pages
 
 # Updated to ensure latest deployment works properly
-# Force deploy at 2025-06-04 16:45 UTC
+# Force deploy at 2025-06-05 22:15 UTC - Clear cache and redeploy with fixed model paths
 on:
   push:
     branches:
+      - main
       - master
 
 jobs:
@@ -33,10 +34,13 @@ jobs:
 
     - name: Install dependencies
       working-directory: ./project
-      run: npm install
+      run: npm ci
 
     - name: Build project
       working-directory: ./project
+      env:
+        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+        VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
       run: npm run build
 
     - name: List built files (debug)
