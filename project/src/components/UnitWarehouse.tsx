@@ -19,15 +19,55 @@ const isBridgeFile = (fileName: string): boolean => {
   return /bridge\.glb$/i.test(fileName);
 };
 
-// List of all GLB files to load
-const GLB_FILES = [
-  'a1.glb' // Test with just one file first
-  // 'a bridge.glb', 'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
-  // 'b bridge.glb', 'b1.glb', 'b2.glb',
-  // 'c bridge 1.glb', 'c bridge 2.glb', 'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 
-  // 'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
-  // 'e1.glb', 'e2.glb', 'e3.glb'
-];
+// Simple test component for loading one model
+const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => void }> = ({ fileName, onLoad }) => {
+  const modelUrl = `/models/${fileName}`;
+  const { scene } = useGLTF(modelUrl);
+  
+  useEffect(() => {
+    if (scene) {
+      const clonedScene = scene.clone();
+      const modelName = fileName.replace('.glb', '');
+      
+      clonedScene.name = modelName;
+      
+      const isUnit = isUnitFile(fileName);
+      const isBridge = isBridgeFile(fileName);
+      
+      // Set initial materials
+      clonedScene.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          if (isBridge) {
+            // Bridges: neutral gray, non-interactive
+            child.material = new MeshStandardMaterial({ 
+              color: 0x888888, 
+              metalness: 0.2, 
+              roughness: 0.8 
+            });
+          } else if (isUnit) {
+            // Units: blue default color
+            child.material = new MeshStandardMaterial({ 
+              color: 0x007bff, 
+              metalness: 0.1, 
+              roughness: 0.7 
+            });
+          }
+          // Store original material for highlighting
+          child.userData.originalMaterial = child.material.clone();
+        }
+      });
+      
+      onLoad({
+        name: modelName,
+        object: clonedScene,
+        isUnit,
+        isBridge
+      });
+    }
+  }, [scene, fileName, onLoad]);
+  
+  return null; // This component doesn't render anything directly
+};
 
 export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({ 
   onUnitSelect,
@@ -37,89 +77,26 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   const groupRef = useRef<Group>(null);
   const [loadedModels, setLoadedModels] = useState<LoadedModel[]>([]);
   const [hoveredUnit, setHoveredUnit] = useState<string | null>(null);
-  const [debugUrls, setDebugUrls] = useState<string[]>([]);
   
-  const baseUrl = import.meta.env.BASE_URL;
-
-  // Preload models when component mounts with correct base URL
-  useEffect(() => {
-    const urls: string[] = [];
-    // Preload all models with correct base URL
-    GLB_FILES.forEach(fileName => {
-      const modelUrl = `${baseUrl}${fileName}`;
-      urls.push(modelUrl);
-      console.log(`Preloading model: ${modelUrl}`);
-      useGLTF.preload(modelUrl);
-    });
-    setDebugUrls(urls);
-  }, [baseUrl]);
-
-  // Load all GLB models
-  useEffect(() => {
-    const loadAllModels = async () => {
-      const models: LoadedModel[] = [];
-      
-      for (const fileName of GLB_FILES) {
-        try {
-          const modelUrl = `${baseUrl}${fileName}`;
-          console.log(`Loading model from: ${modelUrl}`);
-          
-          // Use the useGLTF hook result directly
-          const result = useGLTF(modelUrl);
-          if (!result || !result.scene) {
-            console.warn(`Failed to load ${fileName}: missing scene`);
-            continue;
-          }
-          
-          const clonedScene = result.scene.clone();
-          const modelName = fileName.replace('.glb', '');
-          
-          clonedScene.name = modelName;
-          
-          const isUnit = isUnitFile(fileName);
-          const isBridge = isBridgeFile(fileName);
-          
-          // Set initial materials
-          clonedScene.traverse((child: Object3D) => {
-            if (child instanceof Mesh) {
-              if (isBridge) {
-                // Bridges: neutral gray, non-interactive
-                child.material = new MeshStandardMaterial({ 
-                  color: 0x888888, 
-                  metalness: 0.2, 
-                  roughness: 0.8 
-                });
-              } else if (isUnit) {
-                // Units: blue default color
-                child.material = new MeshStandardMaterial({ 
-                  color: 0x007bff, 
-                  metalness: 0.1, 
-                  roughness: 0.7 
-                });
-              }
-              // Store original material for highlighting
-              child.userData.originalMaterial = child.material.clone();
-            }
-          });
-          
-          models.push({
-            name: modelName,
-            object: clonedScene,
-            isUnit,
-            isBridge
-          });
-          
-        } catch (error) {
-          console.error(`Error loading GLB file: ${fileName}`, error);
-        }
+  // List of models to load - now including all available models
+  const modelsToLoad = [
+    'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
+    'b1.glb', 'b2.glb',
+    'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
+    'e1.glb', 'e2.glb', 'e3.glb',
+    'a bridge.glb', 'b bridge.glb', 'c bridge 1.glb', 'c bridge 2.glb'
+  ];
+  
+  const handleModelLoad = useCallback((model: LoadedModel) => {
+    console.log('Model loaded:', model.name);
+    setLoadedModels(prev => {
+      // Check if model already exists
+      if (prev.some(m => m.name === model.name)) {
+        return prev;
       }
-      
-      setLoadedModels(models);
-      console.log('All models loaded:', models);
-    };
-
-    loadAllModels();
-  }, [baseUrl]);
+      return [...prev, model];
+    });
+  }, []);
 
   // Handle highlighting
   const applyHighlight = useCallback((object: Object3D, highlight: boolean, isSelected: boolean = false) => {
@@ -199,6 +176,15 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
+      {/* Load multiple models */}
+      {modelsToLoad.map((fileName) => (
+        <SingleModel 
+          key={fileName}
+          fileName={fileName} 
+          onLoad={handleModelLoad} 
+        />
+      ))}
+      
       {/* Base plane */}
       <mesh receiveShadow position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[30, 30]} />

@@ -27,74 +27,129 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
 
   return (
     <AnimatePresence>
+      {/* Dimming Background */}
       <motion.div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        className="fixed inset-0 bg-black z-40"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        onClick={onClose}
+      />
+      
+      {/* Popup Content - In front of dimming */}
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center px-4 md:justify-end md:pr-8 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         <motion.div
-          className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-auto"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white bg-opacity-100 backdrop-blur-sm rounded-xl shadow-2xl 
+                     w-full max-w-md md:max-w-lg lg:max-w-xl
+                     max-h-[85vh] md:max-h-[90vh] 
+                     overflow-hidden flex flex-col
+                     border border-white border-opacity-60 pointer-events-auto"
+          initial={{ 
+            scale: 0.8, 
+            opacity: 0, 
+            x: 100,
+            y: 20
+          }}
+          animate={{ 
+            scale: 1, 
+            opacity: 1, 
+            x: 0,
+            y: 0
+          }}
+          exit={{ 
+            scale: 0.8, 
+            opacity: 0, 
+            x: 100,
+            y: 20
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: [0.23, 1, 0.32, 1], // Custom easing for smooth feel
+            opacity: { duration: 0.3 }
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6">
+          {/* Scrollable content area */}
+          <div className="overflow-y-auto flex-1 p-6">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
                 Unit {selectedUnit.toUpperCase()}
               </h2>
-              <button 
+              <motion.button 
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 hover:bg-opacity-70 transition-colors duration-200"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+                <X className="w-5 h-5 md:w-6 md:h-6 text-gray-500" />
+              </motion.button>
             </div>
 
             {/* Availability Status */}
-            <div className={`mb-4 p-3 rounded-lg flex items-center ${
-              isAvailable ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-            }`}>
+            <motion.div 
+              className={`mb-6 p-4 rounded-lg flex items-center shadow-sm ${
+                isAvailable 
+                  ? 'bg-green-50 bg-opacity-100 border border-green-200 border-opacity-90' 
+                  : 'bg-red-50 bg-opacity-100 border border-red-200 border-opacity-90'
+              }`}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
               {isAvailable ? (
                 <>
-                  <Check className="w-5 h-5 text-green-600 mr-2" />
-                  <span className="text-green-800 font-medium">Available for Rent</span>
+                  <Check className="w-5 h-5 md:w-6 md:h-6 text-green-600 mr-3" />
+                  <span className="text-green-800 font-medium text-sm md:text-base">Available for Rent</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-                  <span className="text-red-800 font-medium">Currently Unavailable</span>
+                  <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600 mr-3" />
+                  <span className="text-red-800 font-medium text-sm md:text-base">Currently Unavailable</span>
                 </>
               )}
-            </div>
+            </motion.div>
 
             {/* Unit Details */}
-            <div className="space-y-4 mb-4">
+            <motion.div 
+              className="space-y-4 mb-6"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+            >
               <div className="flex items-center">
-                <Home className="w-5 h-5 text-blue-600 mr-3" />
+                <Home className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mr-3 flex-shrink-0" />
                 <div>
-                  <span className="text-gray-600">Size: </span>
-                  <span className="font-medium text-gray-800">{size}</span>
+                  <span className="text-gray-600 text-sm md:text-base">Size: </span>
+                  <span className="font-medium text-gray-800 text-sm md:text-base">{size}</span>
                 </div>
               </div>
 
               <div className="flex items-start">
-                <Wrench className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
+                <Wrench className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
                 <div>
-                  <span className="text-gray-600">Amenities: </span>
-                  <span className="font-medium text-gray-800">{amenities}</span>
+                  <span className="text-gray-600 text-sm md:text-base">Amenities: </span>
+                  <span className="font-medium text-gray-800 text-sm md:text-base">{amenities}</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Floor Plan */}
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-800 mb-2">Floor Plan</h3>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <motion.div 
+              className="mb-6"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+            >
+              <h3 className="text-lg md:text-xl font-medium text-gray-800 mb-3">Floor Plan</h3>
+              <div className="border border-gray-200 border-opacity-90 rounded-lg overflow-hidden shadow-sm bg-white bg-opacity-100">
                 <img 
                   src={floorPlanUrl}
                   alt={`Floor plan for Unit ${selectedUnit}`}
@@ -105,16 +160,25 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
                   }}
                 />
               </div>
-            </div>
+            </motion.div>
+          </div>
 
-            {/* Action Button */}
-            <button
+          {/* Fixed Action Button at bottom */}
+          <motion.div 
+            className="p-6 pt-0 bg-gradient-to-t from-white to-transparent"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+          >
+            <motion.button
               onClick={onClose}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               Close Details
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
