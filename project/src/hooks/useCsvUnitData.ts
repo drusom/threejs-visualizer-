@@ -20,7 +20,7 @@ export const useCsvUnitData = (csvUrl: string) => {
       }
       
       const csvText = await response.text();
-      console.log('Raw CSV data:', csvText.substring(0, 200) + '...');
+      console.log('Raw CSV data:', csvText.substring(0, 500) + '...');
       
       // Parse CSV with headers
       const parseResult = Papa.parse(csvText, { 
@@ -35,13 +35,17 @@ export const useCsvUnitData = (csvUrl: string) => {
 
       const parsedData = parseResult.data as any[];
       console.log('Parsed CSV data:', parsedData);
+      console.log('CSV Headers found:', Object.keys(parsedData[0] || {}));
 
       if (parsedData && parsedData.length > 0) {
         const unitDataMap: Record<string, UnitData> = {};
         
-        parsedData.forEach((row: any) => {
-          // Handle different possible column names
+        parsedData.forEach((row: any, index: number) => {
+          console.log(`Processing row ${index}:`, row);
+          
+          // Handle different possible column names for unit name
           const unitName = (
+            row['Product'] ||        // Your column name
             row['Unit Name'] || 
             row['Building ID'] || 
             row['Building'] || 
@@ -57,12 +61,31 @@ export const useCsvUnitData = (csvUrl: string) => {
             'N/A'
           ).toString().trim();
           
-          const availability = (
+          // Handle checkbox values from Google Sheets
+          const availableValue = (
+            row['Available'] ||     // Your column name  
             row['Availability'] || 
             row['Status'] || 
-            row['Available'] ||
             'Unknown'
           ).toString().trim();
+          
+          console.log(`Unit ${unitName} - Raw available value: "${availableValue}" (type: ${typeof availableValue})`);
+          
+          // Convert checkbox TRUE/FALSE to Available/Occupied
+          let availability: string;
+          if (availableValue.toLowerCase() === 'true' || availableValue === '1' || availableValue.toLowerCase() === 'yes') {
+            availability = 'Available';
+          } else if (availableValue.toLowerCase() === 'false' || availableValue === '0' || availableValue.toLowerCase() === 'no') {
+            availability = 'Occupied';
+          } else if (availableValue.toLowerCase().includes('available')) {
+            availability = 'Available';
+          } else if (availableValue.toLowerCase().includes('occupied') || availableValue.toLowerCase().includes('unavailable')) {
+            availability = 'Occupied';
+          } else {
+            // Default to Available for unknown values
+            availability = 'Available';
+            console.warn(`Unknown availability value for ${unitName}: "${availableValue}", defaulting to Available`);
+          }
           
           const amenities = (
             row['Amenities'] || 
@@ -78,13 +101,21 @@ export const useCsvUnitData = (csvUrl: string) => {
               availability: availability,
               amenities: amenities
             };
-            console.log(`Mapped unit: ${unitName} -> Available: ${availability}`);
+            console.log(`✓ Mapped unit: ${unitName} -> Available: ${availability} (from: "${availableValue}")`);
+          } else {
+            console.log(`⚠️ Skipping row ${index} - no unit name found`);
           }
         });
         
         setData(unitDataMap);
         console.log('Final unit data map:', unitDataMap);
         console.log(`Successfully loaded ${Object.keys(unitDataMap).length} units from CSV`);
+        
+        // Show summary of availability status
+        const availableCount = Object.values(unitDataMap).filter(unit => unit.availability === 'Available').length;
+        const occupiedCount = Object.values(unitDataMap).filter(unit => unit.availability === 'Occupied').length;
+        console.log(`📊 Summary: ${availableCount} Available, ${occupiedCount} Occupied`);
+        
       } else {
         console.log('No data found in CSV');
         setError('No data found in CSV file');
