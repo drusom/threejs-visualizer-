@@ -46,60 +46,130 @@ const CameraController: React.FC<{
 }> = ({ selectedUnit, onCameraMove }) => {
   const { camera } = useThree();
   const orbitControlsRef = useRef<any>(null);
+  const isTransitioning = useRef(false);
+  const transitionProgress = useRef(0);
 
-  // Default camera position
-  const defaultPosition = new THREE.Vector3(0, 15, 25);
+  // Default camera settings
   const defaultTarget = new THREE.Vector3(0, 0, 0);
 
-  // Target position for selected unit (you can customize these positions)
+  // Get the actual position of units based on their loaded models
   const getUnitPosition = (unitName: string): THREE.Vector3 => {
-    // These positions should match your actual unit positions in the warehouse
+    // These positions should roughly match your actual unit layout
+    // You can adjust these based on your actual warehouse layout
     const positions: { [key: string]: THREE.Vector3 } = {
-      'a1': new THREE.Vector3(-15, 2, -10),
-      'a2': new THREE.Vector3(-10, 2, -10),
-      'a3': new THREE.Vector3(-5, 2, -10),
-      'a4': new THREE.Vector3(0, 2, -10),
-      'a5': new THREE.Vector3(5, 2, -10),
-      'a6': new THREE.Vector3(10, 2, -10),
-      'b1': new THREE.Vector3(-8, 2, -5),
-      'b2': new THREE.Vector3(8, 2, -5),
-      // Add more positions as needed for c1-c13, e1-e3
+      // A-series units (front row)
+      'a1': new THREE.Vector3(-12, 0, -8),
+      'a2': new THREE.Vector3(-8, 0, -8),
+      'a3': new THREE.Vector3(-4, 0, -8),
+      'a4': new THREE.Vector3(0, 0, -8),
+      'a5': new THREE.Vector3(4, 0, -8),
+      'a6': new THREE.Vector3(8, 0, -8),
+      
+      // B-series units (middle)
+      'b1': new THREE.Vector3(-6, 0, -3),
+      'b2': new THREE.Vector3(6, 0, -3),
+      
+      // C-series units (back rows)
+      'c1': new THREE.Vector3(-12, 0, 2),
+      'c2': new THREE.Vector3(-9, 0, 2),
+      'c3': new THREE.Vector3(-6, 0, 2),
+      'c4': new THREE.Vector3(-3, 0, 2),
+      'c5': new THREE.Vector3(0, 0, 2),
+      'c6': new THREE.Vector3(3, 0, 2),
+      'c7': new THREE.Vector3(6, 0, 2),
+      'c8': new THREE.Vector3(9, 0, 2),
+      'c9': new THREE.Vector3(12, 0, 2),
+      'c10': new THREE.Vector3(-9, 0, 5),
+      'c11': new THREE.Vector3(-6, 0, 5),
+      'c12': new THREE.Vector3(-3, 0, 5),
+      'c13': new THREE.Vector3(0, 0, 5),
+      
+      // E-series units (special/executive)
+      'e1': new THREE.Vector3(-4, 0, 8),
+      'e2': new THREE.Vector3(0, 0, 8),
+      'e3': new THREE.Vector3(4, 0, 8),
     };
-    return positions[unitName] || new THREE.Vector3(0, 2, 0);
+    return positions[unitName] || new THREE.Vector3(0, 0, 0);
   };
 
-  useFrame(() => {
+  // Handle target changes when unit selection changes
+  useEffect(() => {
     if (orbitControlsRef.current) {
       const controls = orbitControlsRef.current;
       
       if (selectedUnit) {
+        // Start transition to unit
         const unitPosition = getUnitPosition(selectedUnit);
-        const zoomPosition = unitPosition.clone().add(new THREE.Vector3(5, 8, 5));
+        isTransitioning.current = true;
+        transitionProgress.current = 0;
         
-        // Smoothly move camera to unit position
-        camera.position.lerp(zoomPosition, 0.05);
-        controls.target.lerp(unitPosition, 0.05);
+        // Animate the controls target to the unit position
+        const animate = () => {
+          if (transitionProgress.current < 1) {
+            transitionProgress.current += 0.02; // Adjust speed here
+            
+            // Lerp the target to the unit position
+            const currentTarget = controls.target.clone();
+            currentTarget.lerp(unitPosition, transitionProgress.current);
+            controls.target.copy(currentTarget);
+            
+            // Smoothly move camera closer to the unit
+            const idealDistance = 12; // Distance from the unit
+            const currentDistance = camera.position.distanceTo(unitPosition);
+            if (currentDistance > idealDistance + 2) {
+              const direction = camera.position.clone().sub(unitPosition).normalize();
+              const newPosition = unitPosition.clone().add(direction.multiplyScalar(idealDistance));
+              newPosition.y = Math.max(newPosition.y, 3); // Maintain minimum height
+              camera.position.lerp(newPosition, 0.02);
+            }
+            
+            controls.update();
+            requestAnimationFrame(animate);
+          } else {
+            isTransitioning.current = false;
+          }
+        };
+        animate();
+        
       } else {
-        // Return to default view
-        camera.position.lerp(defaultPosition, 0.03);
-        controls.target.lerp(defaultTarget, 0.03);
+        // Return to world center
+        isTransitioning.current = true;
+        transitionProgress.current = 0;
+        
+        const animate = () => {
+          if (transitionProgress.current < 1) {
+            transitionProgress.current += 0.02;
+            
+            // Lerp back to default target
+            const currentTarget = controls.target.clone();
+            currentTarget.lerp(defaultTarget, transitionProgress.current);
+            controls.target.copy(currentTarget);
+            
+            controls.update();
+            requestAnimationFrame(animate);
+          } else {
+            isTransitioning.current = false;
+          }
+        };
+        animate();
       }
-      
-      controls.update();
     }
-  });
+  }, [selectedUnit, camera]);
 
   return (
     <OrbitControls
       ref={orbitControlsRef}
-      enablePan={false}
+      enablePan={true}
       enableZoom={true}
       enableRotate={true}
-      minDistance={8}
+      minDistance={5}
       maxDistance={50}
-      target={[0, 0, 0]} // Fixed orbit center
+      target={defaultTarget} // Initial target, will be animated
       dampingFactor={0.05}
-      rotateSpeed={0.5}
+      enableDamping={true}
+      rotateSpeed={0.8}
+      zoomSpeed={0.8}
+      panSpeed={0.8}
     />
   );
 };
