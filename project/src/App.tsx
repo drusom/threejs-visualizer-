@@ -39,132 +39,25 @@ const FALLBACK_UNIT_DATA = {
   'e3': { name: 'e3', size: '2,000 sq ft', availability: 'Occupied', amenities: 'Executive package' },
 };
 
-// Camera controller for smooth zoom to selected unit
+// Camera controller - no movement, just basic orbit controls
 const CameraController: React.FC<{
   selectedUnit: string | null;
-  onCameraMove?: (isMoving: boolean) => void;
-}> = ({ selectedUnit, onCameraMove }) => {
-  const { camera } = useThree();
+}> = () => {
   const orbitControlsRef = useRef<any>(null);
-  const isTransitioning = useRef(false);
-  const transitionProgress = useRef(0);
 
-  // Default camera settings
+  // Better initial camera settings - flipped 180 degrees and closer
   const defaultTarget = new THREE.Vector3(0, 0, 0);
 
-  // Get the actual position of units based on their loaded models
-  const getUnitPosition = (unitName: string): THREE.Vector3 => {
-    // These positions should roughly match your actual unit layout
-    // You can adjust these based on your actual warehouse layout
-    const positions: { [key: string]: THREE.Vector3 } = {
-      // A-series units (front row)
-      'a1': new THREE.Vector3(-12, 0, -8),
-      'a2': new THREE.Vector3(-8, 0, -8),
-      'a3': new THREE.Vector3(-4, 0, -8),
-      'a4': new THREE.Vector3(0, 0, -8),
-      'a5': new THREE.Vector3(4, 0, -8),
-      'a6': new THREE.Vector3(8, 0, -8),
-      
-      // B-series units (middle)
-      'b1': new THREE.Vector3(-6, 0, -3),
-      'b2': new THREE.Vector3(6, 0, -3),
-      
-      // C-series units (back rows)
-      'c1': new THREE.Vector3(-12, 0, 2),
-      'c2': new THREE.Vector3(-9, 0, 2),
-      'c3': new THREE.Vector3(-6, 0, 2),
-      'c4': new THREE.Vector3(-3, 0, 2),
-      'c5': new THREE.Vector3(0, 0, 2),
-      'c6': new THREE.Vector3(3, 0, 2),
-      'c7': new THREE.Vector3(6, 0, 2),
-      'c8': new THREE.Vector3(9, 0, 2),
-      'c9': new THREE.Vector3(12, 0, 2),
-      'c10': new THREE.Vector3(-9, 0, 5),
-      'c11': new THREE.Vector3(-6, 0, 5),
-      'c12': new THREE.Vector3(-3, 0, 5),
-      'c13': new THREE.Vector3(0, 0, 5),
-      
-      // E-series units (special/executive)
-      'e1': new THREE.Vector3(-4, 0, 8),
-      'e2': new THREE.Vector3(0, 0, 8),
-      'e3': new THREE.Vector3(4, 0, 8),
-    };
-    return positions[unitName] || new THREE.Vector3(0, 0, 0);
-  };
-
-  // Handle target changes when unit selection changes
-  useEffect(() => {
-    if (orbitControlsRef.current) {
-      const controls = orbitControlsRef.current;
-      
-      if (selectedUnit) {
-        // Start transition to unit
-        const unitPosition = getUnitPosition(selectedUnit);
-        isTransitioning.current = true;
-        transitionProgress.current = 0;
-        
-        // Animate the controls target to the unit position
-        const animate = () => {
-          if (transitionProgress.current < 1) {
-            transitionProgress.current += 0.02; // Adjust speed here
-            
-            // Lerp the target to the unit position
-            const currentTarget = controls.target.clone();
-            currentTarget.lerp(unitPosition, transitionProgress.current);
-            controls.target.copy(currentTarget);
-            
-            // Smoothly move camera closer to the unit
-            const idealDistance = 12; // Distance from the unit
-            const currentDistance = camera.position.distanceTo(unitPosition);
-            if (currentDistance > idealDistance + 2) {
-              const direction = camera.position.clone().sub(unitPosition).normalize();
-              const newPosition = unitPosition.clone().add(direction.multiplyScalar(idealDistance));
-              newPosition.y = Math.max(newPosition.y, 3); // Maintain minimum height
-              camera.position.lerp(newPosition, 0.02);
-            }
-            
-            controls.update();
-            requestAnimationFrame(animate);
-          } else {
-            isTransitioning.current = false;
-          }
-        };
-        animate();
-        
-      } else {
-        // Return to world center
-        isTransitioning.current = true;
-        transitionProgress.current = 0;
-        
-        const animate = () => {
-          if (transitionProgress.current < 1) {
-            transitionProgress.current += 0.02;
-            
-            // Lerp back to default target
-            const currentTarget = controls.target.clone();
-            currentTarget.lerp(defaultTarget, transitionProgress.current);
-            controls.target.copy(currentTarget);
-            
-            controls.update();
-            requestAnimationFrame(animate);
-          } else {
-            isTransitioning.current = false;
-          }
-        };
-        animate();
-      }
-    }
-  }, [selectedUnit, camera]);
-
+  // No camera movement logic - just basic orbit controls
   return (
     <OrbitControls
       ref={orbitControlsRef}
       enablePan={true}
       enableZoom={true}
       enableRotate={true}
-      minDistance={5}
-      maxDistance={50}
-      target={defaultTarget} // Initial target, will be animated
+      minDistance={3}
+      maxDistance={25} // Reduced max distance so users don't get lost
+      target={defaultTarget}
       dampingFactor={0.05}
       enableDamping={true}
       rotateSpeed={0.8}
@@ -174,7 +67,7 @@ const CameraController: React.FC<{
   );
 };
 
-// Details sidebar component
+// Details sidebar component with fixed positioning in lower right
 const DetailsSidebar: React.FC<{
   selectedUnit: string | null;
   unitData: any;
@@ -187,7 +80,7 @@ const DetailsSidebar: React.FC<{
   const isAvailable = data?.availability?.toLowerCase().includes('available') || data?.availability?.toLowerCase() === 'true';
 
   return (
-    <div className="fixed right-4 top-1/2 transform -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-10 w-64">
+    <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 w-64 border-2 border-blue-200 z-50">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-gray-800">
           Unit {selectedUnit.toUpperCase()}
@@ -291,7 +184,7 @@ function App() {
         <Canvas 
           className="flex-1"
           shadows
-          camera={{ position: [0, 15, 25], fov: 75 }}
+          camera={{ position: [-6, 6, -8], fov: 75 }}
         >
           {/* Lighting setup */}
           <ambientLight intensity={0.4} />
@@ -312,14 +205,27 @@ function App() {
           {/* Environment */}
           <Environment preset="city" />
           
-          {/* Enhanced Camera Controls with fixed orbit center */}
+          {/* Enhanced Camera Controls with proper object framing */}
           <CameraController selectedUnit={selectedUnit} />
         </Canvas>
+        
+        {/* White vignette effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse at center, 
+              transparent 15%, 
+              rgba(255, 255, 255, 0.2) 40%, 
+              rgba(255, 255, 255, 0.6) 70%, 
+              rgba(255, 255, 255, 0.9) 90%, 
+              rgba(255, 255, 255, 1) 100%)`
+          }}
+        />
         
         {/* Ground plane */}
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-gray-200 to-transparent pointer-events-none" />
         
-        {/* Details Sidebar */}
+        {/* Dynamic Details Sidebar */}
         <DetailsSidebar
           selectedUnit={selectedUnit}
           unitData={effectiveUnitData}

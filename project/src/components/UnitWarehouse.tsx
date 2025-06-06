@@ -79,6 +79,15 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   const [loadedModels, setLoadedModels] = useState<LoadedModel[]>([]);
   const [hoveredUnit, setHoveredUnit] = useState<string | null>(null);
   
+  // Animation state for each model
+  const animationState = useRef<Record<string, {
+    currentScale: number;
+    targetScale: number;
+    animationProgress: number;
+    isAnimating: boolean;
+    startScale: number;
+  }>>({});
+  
   // List of models to load - now including all available models
   const modelsToLoad = [
     'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
@@ -95,43 +104,105 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
       if (prev.some(m => m.name === model.name)) {
         return prev;
       }
+      
+      // Initialize animation state for new model
+      if (model.isUnit && !animationState.current[model.name]) {
+        animationState.current[model.name] = {
+          currentScale: 1,
+          targetScale: 1,
+          animationProgress: 1,
+          isAnimating: false,
+          startScale: 1
+        };
+      }
+      
       return [...prev, model];
     });
   }, []);
 
-  // Handle highlighting
-  const applyHighlight = useCallback((object: Object3D, highlight: boolean, isSelected: boolean = false) => {
+  // Handle highlighting with availability-based colors
+  const applyHighlight = useCallback((object: Object3D, highlight: boolean, isSelected: boolean = false, unitName: string) => {
+    const unitInfo = unitData[unitName];
+    const isAvailable = unitInfo?.availability?.toLowerCase().includes('available') || unitInfo?.availability?.toLowerCase() === 'true';
+    
     object.traverse((child) => {
       if (child instanceof Mesh && child.userData.originalMaterial) {
         if (highlight || isSelected) {
-          const color = isSelected ? 0xffd700 : 0xffaa00; // Gold for selected, orange for hover
+          // Use green for available units, red for unavailable units
+          const color = isAvailable ? 0x22c55e : 0xdc2626; // Bright green or bright red
           child.material = new MeshStandardMaterial({ 
             color, 
             metalness: 0.3, 
-            roughness: 0.5 
+            roughness: 0.4,
+            emissive: color,
+            emissiveIntensity: isSelected ? 0.15 : 0.08 // Glow effect
           });
         } else {
+          // Reset to original material
           child.material = child.userData.originalMaterial.clone();
         }
         child.material.needsUpdate = true;
       }
     });
-  }, []);
+  }, [unitData]);
 
-  // Apply highlighting when hover or selection changes
+  // Update target scales when hover or selection changes
   useEffect(() => {
     loadedModels.forEach((model) => {
       if (model.isUnit) {
         const isHovered = hoveredUnit === model.name;
         const isSelected = selectedUnit === model.name;
-        applyHighlight(model.object, isHovered, isSelected);
+        applyHighlight(model.object, isHovered, isSelected, model.name);
         
-        // Scale effect
-        const scale = isSelected ? 1.05 : isHovered ? 1.02 : 1;
-        model.object.scale.setScalar(scale);
+        // Enhanced scale effect with time-based transitions (more subtle)
+        const baseScale = 1;
+        const hoverScale = 1.02;  // Reduced from 1.05 to 1.02 (2% increase)
+        const selectedScale = 1.04; // Reduced from 1.08 to 1.04 (4% increase)
+        
+        let targetScale = baseScale;
+        if (isSelected) targetScale = selectedScale;
+        else if (isHovered) targetScale = hoverScale;
+        
+        // Update animation state for this model
+        const animState = animationState.current[model.name];
+        if (animState && animState.targetScale !== targetScale) {
+          animState.startScale = animState.currentScale;
+          animState.targetScale = targetScale;
+          animState.animationProgress = 0;
+          animState.isAnimating = true;
+        }
       }
     });
   }, [hoveredUnit, selectedUnit, loadedModels, applyHighlight]);
+
+  // Smooth time-based animations using useFrame
+  useFrame((state, delta) => {
+    const animationDuration = 0.75; // 0.75 seconds for transitions
+    
+    loadedModels.forEach((model) => {
+      if (model.isUnit) {
+        const animState = animationState.current[model.name];
+        if (animState && animState.isAnimating) {
+          // Update animation progress
+          animState.animationProgress += delta / animationDuration;
+          
+          if (animState.animationProgress >= 1) {
+            // Animation complete
+            animState.animationProgress = 1;
+            animState.isAnimating = false;
+            animState.currentScale = animState.targetScale;
+          } else {
+            // Smooth easing function (ease-out cubic)
+            const easeProgress = 1 - Math.pow(1 - animState.animationProgress, 3);
+            animState.currentScale = animState.startScale + (animState.targetScale - animState.startScale) * easeProgress;
+          }
+          
+          // Apply the smooth scale
+          model.object.scale.setScalar(animState.currentScale);
+        }
+      }
+    });
+  });
 
   // Handle click interactions
   const handleClick = useCallback((event: any) => {
