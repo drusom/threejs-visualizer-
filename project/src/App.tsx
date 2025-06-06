@@ -3,15 +3,13 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { UnitWarehouse } from './components/UnitWarehouse';
 import UnitDetailPopup from './components/UnitDetailPopup';
-import { useGoogleAuth } from './hooks/useGoogleAuth';
-import { useUnitData } from './hooks/useUnitData';
+import { useCsvUnitData } from './hooks/useCsvUnitData';
 import * as THREE from 'three';
 
-// Replace with your actual Google Sheet ID
-const SPREADSHEET_ID = '1SLKorpilvUgBvH_Yz-fyQdcNdqvvJdAGhV0Uqt9RTFQ';
-const RANGE = 'Sheet1!A:D'; // Unit Name | Size | Availability | Amenities
+// Public Google Sheets CSV URL - no authentication needed
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjyYKuMPVRbxLvqW0QnF3KOVYSDQq7534KBphrXIPVvIrtOcWQ0S4_rpN4-mX5anttgLwkrOJV008T/pub?output=csv';
 
-// Fallback unit data when Google Sheets is not available
+// Fallback unit data when CSV is not available
 const FALLBACK_UNIT_DATA = {
   'a1': { name: 'a1', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
   'a2': { name: 'a2', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
@@ -120,25 +118,25 @@ const DetailsSidebar: React.FC<{
 function App() {
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
-  const { isSignedIn, isLoading: isAuthLoading } = useGoogleAuth();
-  const { data: unitData, loading: isUnitDataLoading, error, refetch } = useUnitData(
-    SPREADSHEET_ID,
-    RANGE,
-    isSignedIn,
-    !isAuthLoading
-  );
+  
+  // Use new CSV-based data fetching
+  const { data: csvUnitData, loading: isUnitDataLoading, error } = useCsvUnitData(CSV_URL);
 
-  // Use fallback data if Google Sheets fails or is empty
-  const hasValidUnitData = unitData && Object.keys(unitData).length > 0;
-  const effectiveUnitData = hasValidUnitData ? unitData : FALLBACK_UNIT_DATA;
+  // Use CSV data if available, otherwise fallback data
+  const hasValidUnitData = csvUnitData && Object.keys(csvUnitData).length > 0;
+  const effectiveUnitData = hasValidUnitData ? csvUnitData : FALLBACK_UNIT_DATA;
 
   // Log unit data for debugging
   useEffect(() => {
-    console.log("Raw unitData from Google Sheets:", unitData);
+    console.log("Raw CSV unitData:", csvUnitData);
     console.log("Has valid unit data:", hasValidUnitData);
     console.log("Using effective unit data:", effectiveUnitData);
     console.log("Number of units available:", Object.keys(effectiveUnitData).length);
-  }, [unitData, hasValidUnitData, effectiveUnitData]);
+    
+    if (error) {
+      console.log("CSV loading error:", error);
+    }
+  }, [csvUnitData, hasValidUnitData, effectiveUnitData, error]);
 
   // Log selected unit when it changes
   useEffect(() => {
@@ -170,14 +168,20 @@ function App() {
           <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-90 z-10">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p>Loading unit data...</p>
+              <p>Loading unit data from CSV...</p>
             </div>
           </div>
         )}
         
         {error && (
           <div className="absolute top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded-md text-sm z-10">
-            Using offline data - Google Sheets unavailable
+            Using offline data - CSV unavailable: {error}
+          </div>
+        )}
+        
+        {hasValidUnitData && (
+          <div className="absolute top-4 left-4 bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded-md text-sm z-10">
+            ✓ Live data from Google Sheets CSV
           </div>
         )}
         
