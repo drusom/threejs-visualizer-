@@ -3,13 +3,10 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { UnitWarehouse } from './components/UnitWarehouse';
 import UnitDetailPopup from './components/UnitDetailPopup';
-import { useCsvUnitData } from './hooks/useCsvUnitData';
+import { useSecureUnitData } from './hooks/useSecureUnitData';
 import * as THREE from 'three';
 
-// Public Google Sheets CSV URL - no authentication needed
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjyYKuMPVRbxLvqW0QnF3KOVYSDQq7534KBphrXIPVvIrtOcWQ0S4_rpN4-mX5anttgLwkrOJV008T/pub?output=csv';
-
-// Fallback unit data when CSV is not available
+// Fallback unit data when API is not available
 const FALLBACK_UNIT_DATA = {
   'a1': { name: 'a1', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
   'a2': { name: 'a2', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
@@ -37,16 +34,93 @@ const FALLBACK_UNIT_DATA = {
   'e3': { name: 'e3', size: '2,000 sq ft', availability: 'Occupied', amenities: 'Executive package' },
 };
 
-// Camera controller - no movement, just basic orbit controls
+// Enhanced Camera controller with smooth reset animation
 const CameraController: React.FC<{
   selectedUnit: string | null;
-}> = () => {
+}> = ({ selectedUnit }) => {
   const orbitControlsRef = useRef<any>(null);
-
-  // Better initial camera settings - flipped 180 degrees and closer
+  const { camera } = useThree();
+  
+  // Initial camera settings - store the default state
   const defaultTarget = new THREE.Vector3(0, 0, 0);
+  const defaultDistance = 12; // Set a consistent default zoom distance
+  
+  // Animation state
+  const animationState = useRef({
+    isAnimating: false,
+    animationProgress: 0,
+    startPosition: new THREE.Vector3(),
+    startTarget: new THREE.Vector3(),
+    startDistance: 0,
+    targetTarget: defaultTarget.clone(),
+    targetDistance: defaultDistance,
+    animationDuration: 1.0 // 1 second for smooth but quick transition
+  });
 
-  // No camera movement logic - just basic orbit controls
+  // Reset camera focal point and zoom while preserving rotation when unit is selected
+  useEffect(() => {
+    if (selectedUnit && orbitControlsRef.current) {
+      const controls = orbitControlsRef.current;
+      const state = animationState.current;
+      
+      // Store current camera state as starting point
+      state.startPosition.copy(camera.position);
+      state.startTarget.copy(controls.target);
+      state.startDistance = camera.position.distanceTo(controls.target);
+      
+      // Set target state (default focal point and zoom, but preserve rotation)
+      state.targetTarget.copy(defaultTarget);
+      state.targetDistance = defaultDistance;
+      
+      // Start animation
+      state.isAnimating = true;
+      state.animationProgress = 0;
+    }
+  }, [selectedUnit, camera]);
+
+  // Smooth animation using useFrame
+  useFrame((_, delta) => {
+    if (!orbitControlsRef.current || !animationState.current.isAnimating) return;
+    
+    const state = animationState.current;
+    const controls = orbitControlsRef.current;
+    
+    // Update animation progress
+    state.animationProgress += delta / state.animationDuration;
+    
+    if (state.animationProgress >= 1) {
+      // Animation complete
+      state.animationProgress = 1;
+      state.isAnimating = false;
+    }
+    
+    // Smooth easing function (ease-out cubic for natural feel)
+    const easeProgress = 1 - Math.pow(1 - state.animationProgress, 3);
+    
+    // Interpolate target position (focal point) smoothly
+    const newTarget = new THREE.Vector3().lerpVectors(
+      state.startTarget,
+      state.targetTarget,
+      easeProgress
+    );
+    
+    // Interpolate distance (zoom level)
+    const newDistance = THREE.MathUtils.lerp(state.startDistance, state.targetDistance, easeProgress);
+    
+    // Calculate the direction from start target to start camera position
+    const startDirection = new THREE.Vector3().subVectors(state.startPosition, state.startTarget).normalize();
+    
+    // Calculate new camera position by maintaining the original direction but using new target and distance
+    const newPosition = new THREE.Vector3().addVectors(newTarget, startDirection.clone().multiplyScalar(newDistance));
+    
+    // Apply the interpolated values smoothly
+    controls.target.copy(newTarget);
+    camera.position.copy(newPosition);
+    
+    // Update controls
+    controls.update();
+  });
+
   return (
     <OrbitControls
       ref={orbitControlsRef}
@@ -119,24 +193,24 @@ function App() {
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
   
-  // Use new CSV-based data fetching
-  const { data: csvUnitData, loading: isUnitDataLoading, error } = useCsvUnitData(CSV_URL);
+  // Use new API-based data fetching
+  const { data: apiUnitData, loading: isUnitDataLoading, error } = useSecureUnitData();
 
-  // Use CSV data if available, otherwise fallback data
-  const hasValidUnitData = csvUnitData && Object.keys(csvUnitData).length > 0;
-  const effectiveUnitData = hasValidUnitData ? csvUnitData : FALLBACK_UNIT_DATA;
+  // Use API data if available, otherwise fallback data
+  const hasValidUnitData = apiUnitData && Object.keys(apiUnitData).length > 0;
+  const effectiveUnitData = hasValidUnitData ? apiUnitData : FALLBACK_UNIT_DATA;
 
   // Log unit data for debugging
   useEffect(() => {
-    console.log("Raw CSV unitData:", csvUnitData);
+    console.log("Raw API unitData:", apiUnitData);
     console.log("Has valid unit data:", hasValidUnitData);
     console.log("Using effective unit data:", effectiveUnitData);
     console.log("Number of units available:", Object.keys(effectiveUnitData).length);
     
     if (error) {
-      console.log("CSV loading error:", error);
+      console.log("API loading error:", error);
     }
-  }, [csvUnitData, hasValidUnitData, effectiveUnitData, error]);
+  }, [apiUnitData, hasValidUnitData, effectiveUnitData, error]);
 
   // Log selected unit when it changes
   useEffect(() => {
@@ -168,20 +242,20 @@ function App() {
           <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-90 z-10">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p>Loading unit data from CSV...</p>
+              <p>Loading unit data from API...</p>
             </div>
           </div>
         )}
         
         {error && (
           <div className="absolute top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded-md text-sm z-10">
-            Using offline data - CSV unavailable: {error}
+            Using offline data - API unavailable: {error}
           </div>
         )}
         
         {hasValidUnitData && (
           <div className="absolute top-4 left-4 bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded-md text-sm z-10">
-            ✓ Live data from Google Sheets CSV
+            ✓ Live data from API
           </div>
         )}
         
