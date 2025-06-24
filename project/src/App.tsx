@@ -9,6 +9,31 @@ import * as THREE from 'three';
 // Public Google Sheets CSV URL - no authentication needed
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjyYKuMPVRbxLvqW0QnF3KOVYSDQq7534KBphrXIPVvIrtOcWQ0S4_rpN4-mX5anttgLwkrOJV008T/pub?output=csv';
 
+// Simple Error Boundary for HDRI loading
+class HDRIErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.log('HDRI loading error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Fallback to simple gradient background
+      return <color attach="background" args={['#87CEEB']} />;
+    }
+
+    return this.props.children;
+  }
+}
+
 // Fallback unit data when CSV is not available
 const FALLBACK_UNIT_DATA = {
   'a1': { name: 'a1', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
@@ -208,11 +233,15 @@ function App() {
             unitData={effectiveUnitData}
           />
           
-          {/* HDRI Environment for realistic lighting and background */}
-          <Environment 
-            files={`${import.meta.env.BASE_URL}textures/summer-cloudy-sky_1K_125ff5fe-96ee-4281-9a2c-2a8e690182a9.exr`}
-            background={true}
-          />
+          {/* HDRI Environment with error handling */}
+          <HDRIErrorBoundary>
+            <React.Suspense fallback={<color attach="background" args={['#87CEEB']} />}>
+              <Environment 
+                files={`${import.meta.env.BASE_URL}textures/summer-cloudy-sky_1K_125ff5fe-96ee-4281-9a2c-2a8e690182a9.exr`}
+                background={true}
+              />
+            </React.Suspense>
+          </HDRIErrorBoundary>
           
           {/* Enhanced Camera Controls with proper object framing */}
           <CameraController selectedUnit={selectedUnit} />
