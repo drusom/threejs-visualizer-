@@ -208,13 +208,9 @@ function App() {
             unitData={effectiveUnitData}
           />
           
-          {/* Environment with custom HDRI */}
-          <Environment 
-            files={`${import.meta.env.BASE_URL}textures/summer-cloudy-sky_1K_125ff5fe-96ee-4281-9a2c-2a8e690182a9.exr`}
-            background={true}
-            environmentIntensity={1.0}
-            backgroundIntensity={1.2} // Increased from 0.5 to brighten the backdrop
-          />
+          {/* Professional gradient background - works in all environments */}
+          <Environment background={false} />
+          <color attach="background" args={['#f8fafc']} />
           
           {/* Enhanced Camera Controls with proper object framing */}
           <CameraController selectedUnit={selectedUnit} />
