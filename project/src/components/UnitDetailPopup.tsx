@@ -17,7 +17,18 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
   if (!selectedUnit) return null;
   
   const data = unitData[selectedUnit];
-  const floorPlanUrl = `/floorplans/${selectedUnit.toLowerCase()}.png`;
+  
+  // Custom floorplan mapping for specific units
+  const getFloorPlanUrl = (unitName: string): string => {
+    // Special case: b2 unit uses the f280.png floorplan
+    if (unitName.toLowerCase() === 'b2') {
+      return '/floorplans/f280.png';
+    }
+    // Default naming convention for other units
+    return `/floorplans/${unitName.toLowerCase()}.png`;
+  };
+  
+  const floorPlanUrl = getFloorPlanUrl(selectedUnit);
 
   // Handle cases where unit data might not be available
   const size = data?.size || 'N/A';
@@ -97,8 +108,8 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
             <motion.div 
               className={`mb-6 p-4 rounded-lg flex items-center shadow-sm ${
                 isAvailable 
-                  ? 'bg-green-50 bg-opacity-100 border border-green-200 border-opacity-90' 
-                  : 'bg-red-50 bg-opacity-100 border border-red-200 border-opacity-90'
+                  ? 'bg-sage-50 bg-opacity-100 border border-sage-200 border-opacity-90' 
+                  : 'bg-red-50 bg-opacity-100 border border-red-300 border-opacity-90'
               }`}
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -106,12 +117,12 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
             >
               {isAvailable ? (
                 <>
-                  <Check className="w-5 h-5 md:w-6 md:h-6 text-green-600 mr-3" />
-                  <span className="text-green-800 font-medium text-sm md:text-base">Available for Rent</span>
+                  <Check className="w-5 h-5 md:w-6 md:h-6 text-sage-700 mr-3" />
+                  <span className="text-sage-800 font-medium text-sm md:text-base">Available for Rent</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600 mr-3" />
+                  <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-700 mr-3" />
                   <span className="text-red-800 font-medium text-sm md:text-base">Currently Unavailable</span>
                 </>
               )}
@@ -125,7 +136,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
               transition={{ delay: 0.2, duration: 0.3 }}
             >
               <div className="flex items-center">
-                <Home className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mr-3 flex-shrink-0" />
+                <Home className="w-5 h-5 md:w-6 md:h-6 text-sage-700 mr-3 flex-shrink-0" />
                 <div>
                   <span className="text-gray-600 text-sm md:text-base">Size: </span>
                   <span className="font-medium text-gray-800 text-sm md:text-base">{size}</span>
@@ -133,7 +144,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
               </div>
 
               <div className="flex items-start">
-                <Wrench className="w-5 h-5 md:w-6 md:h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                <Wrench className="w-5 h-5 md:w-6 md:h-6 text-sage-700 mr-3 mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="text-gray-600 text-sm md:text-base">Amenities: </span>
                   <span className="font-medium text-gray-800 text-sm md:text-base">{amenities}</span>
@@ -172,7 +183,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
           >
             <motion.button
               onClick={onClose}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
+              className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-lg"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

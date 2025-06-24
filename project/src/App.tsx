@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { UnitWarehouse } from './components/UnitWarehouse';
@@ -42,25 +42,27 @@ const CameraController: React.FC<{
   selectedUnit: string | null;
 }> = () => {
   const orbitControlsRef = useRef<any>(null);
-
+  
   // Better initial camera settings - flipped 180 degrees and closer
   const defaultTarget = new THREE.Vector3(0, 0, 0);
 
-  // No camera movement logic - just basic orbit controls
+  // Simple distance-based approach like Google Maps
   return (
     <OrbitControls
       ref={orbitControlsRef}
       enablePan={true}
       enableZoom={true}
       enableRotate={true}
-      minDistance={3}
+      minDistance={5} // Increased minimum distance to prevent clipping through objects
       maxDistance={25} // Reduced max distance so users don't get lost
       target={defaultTarget}
-      dampingFactor={0.05}
+      dampingFactor={0.15} // Increased significantly for smooth drag effect
       enableDamping={true}
-      rotateSpeed={0.8}
-      zoomSpeed={0.8}
-      panSpeed={0.8}
+      rotateSpeed={0.5} // Slightly increased to work better with higher damping
+      zoomSpeed={0.5}   // Slightly increased to work better with higher damping
+      panSpeed={0.4}    // Keep panning gentle
+      minPolarAngle={0} // Allow looking straight down
+      maxPolarAngle={Math.PI * 0.48} // Prevent camera from going under ground (slightly less than PI/2)
     />
   );
 };
@@ -78,7 +80,7 @@ const DetailsSidebar: React.FC<{
   const isAvailable = data?.availability?.toLowerCase().includes('available') || data?.availability?.toLowerCase() === 'true';
 
   return (
-    <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 w-64 border-2 border-blue-200 z-50">
+    <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 w-64 border-2 border-slate-600 z-50">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-gray-800">
           Unit {selectedUnit.toUpperCase()}
@@ -92,10 +94,10 @@ const DetailsSidebar: React.FC<{
       </div>
       
       <div className={`mb-3 p-2 rounded flex items-center ${
-        isAvailable ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+        isAvailable ? 'bg-sage-50 text-sage-800' : 'bg-red-50 text-red-800'
       }`}>
         <div className={`w-3 h-3 rounded-full mr-2 ${
-          isAvailable ? 'bg-green-500' : 'bg-red-500'
+          isAvailable ? 'bg-sage-500' : 'bg-red-700'
         }`}></div>
         {isAvailable ? 'Available' : 'Occupied'}
       </div>
@@ -107,7 +109,7 @@ const DetailsSidebar: React.FC<{
       
       <button
         onClick={onDetailsClick}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
+        className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2 px-4 rounded transition-colors"
       >
         View Details
       </button>
@@ -167,7 +169,7 @@ function App() {
         {isUnitDataLoading && (
           <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-90 z-10">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
               <p>Loading unit data from CSV...</p>
             </div>
           </div>
@@ -180,7 +182,7 @@ function App() {
         )}
         
         {hasValidUnitData && (
-          <div className="absolute top-4 left-4 bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded-md text-sm z-10">
+          <div className="absolute top-4 left-4 bg-sage-100 border border-sage-400 text-sage-700 px-3 py-2 rounded-md text-sm z-10">
             ✓ Live data from Google Sheets CSV
           </div>
         )}
@@ -206,8 +208,13 @@ function App() {
             unitData={effectiveUnitData}
           />
           
-          {/* Environment */}
-          <Environment preset="city" />
+          {/* Environment with custom HDRI */}
+          <Environment 
+            files="/textures/summer-cloudy-sky_1K_125ff5fe-96ee-4281-9a2c-2a8e690182a9.exr"
+            background={true}
+            environmentIntensity={1.0}
+            backgroundIntensity={1.2} // Increased from 0.5 to brighten the backdrop
+          />
           
           {/* Enhanced Camera Controls with proper object framing */}
           <CameraController selectedUnit={selectedUnit} />

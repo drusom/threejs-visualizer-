@@ -11,7 +11,7 @@ const Header: React.FC = () => {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       <div className="flex items-center">
-        <Warehouse className="h-8 w-8 text-indigo-600 mr-3" />
+        <Warehouse className="h-8 w-8 text-slate-600 mr-3" />
         <h1 className="text-xl font-semibold text-gray-800">3D Warehouse Explorer</h1>
       </div>
       <div className="ml-auto flex space-x-4">
@@ -23,7 +23,7 @@ const Header: React.FC = () => {
           About
         </motion.button>
         <motion.button 
-          className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          className="px-4 py-2 rounded-md bg-slate-600 text-white hover:bg-slate-700 transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >

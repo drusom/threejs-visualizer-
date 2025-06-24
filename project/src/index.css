@@ -13,6 +13,43 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Custom sage green colors from user's palette */
+.bg-sage-50 {
+  background-color: #f4f7f5;
+}
+
+.bg-sage-100 {
+  background-color: #e8f2ea;
+}
+
+.bg-sage-200 {
+  background-color: #d1e5d6;
+}
+
+.bg-sage-400 {
+  background-color: #9cc4a7;
+}
+
+.bg-sage-500 {
+  background-color: #7fb08a;
+}
+
+.text-sage-700 {
+  color: #5a8065;
+}
+
+.text-sage-800 {
+  color: #4a6b55;
+}
+
+.border-sage-200 {
+  border-color: #d1e5d6;
+}
+
+.border-sage-400 {
+  border-color: #9cc4a7;
+}
+
 body {
   margin: 0;
   display: flex;

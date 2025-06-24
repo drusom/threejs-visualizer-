@@ -40,16 +40,16 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
               </button>
             </div>
             
-            <div className={`mb-4 p-2 rounded-md flex items-center ${isAvailable ? 'bg-green-50' : 'bg-red-50'}`}>
+            <div className={`mb-4 p-2 rounded-md flex items-center ${isAvailable ? 'bg-sage-50' : 'bg-red-50'}`}>
               {isAvailable ? (
                 <>
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span className="text-green-700 font-medium">Available</span>
+                  <Check className="w-5 h-5 text-sage-700 mr-2" />
+                  <span className="text-sage-800 font-medium">Available</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                  <span className="text-red-700 font-medium">Not Available</span>
+                  <AlertTriangle className="w-5 h-5 text-red-700 mr-2" />
+                  <span className="text-red-800 font-medium">Not Available</span>
                 </>
               )}
             </div>

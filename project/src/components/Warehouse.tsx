@@ -156,9 +156,9 @@ export const Warehouse: React.FC<WarehouseProps> = ({
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Base - always present */}
+      {/* Base - always present - Scaled 10x for horizon effect */}
       <mesh receiveShadow position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[20, 20]} />
+        <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="#e0e0e0" />
       </mesh>
 

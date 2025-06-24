@@ -12,11 +12,25 @@ interface UnitWarehouseProps {
 
 // Helper functions to categorize models
 const isUnitFile = (fileName: string): boolean => {
+  // Special case: "update 2.glb" should act as b2 unit
+  if (fileName === 'update 2.glb') {
+    return true;
+  }
   return /^[a-z]\d+\.glb$/i.test(fileName);
 };
 
 const isBridgeFile = (fileName: string): boolean => {
   return /bridge\.glb$/i.test(fileName);
+};
+
+// Helper function to get unit name for data lookup
+const getUnitName = (fileName: string): string => {
+  // Special case: "update 2.glb" maps to "b2" for unit data
+  if (fileName === 'update 2.glb') {
+    return 'b2';
+  }
+  // For regular unit files, remove .glb extension
+  return fileName.replace('.glb', '');
 };
 
 // Simple test component for loading one model
@@ -28,7 +42,7 @@ const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => 
   useEffect(() => {
     if (scene) {
       const clonedScene = scene.clone();
-      const modelName = fileName.replace('.glb', '');
+      const modelName = getUnitName(fileName); // Use helper function for naming
       
       clonedScene.name = modelName;
       
@@ -46,15 +60,26 @@ const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => 
               roughness: 0.8 
             });
           } else if (isUnit) {
-            // Units: blue default color
-            child.material = new MeshStandardMaterial({ 
-              color: 0x007bff, 
-              metalness: 0.1, 
-              roughness: 0.7 
-            });
+            // For units: preserve original materials but ensure they're MeshStandardMaterial
+            if (fileName === 'update 2.glb') {
+              // Keep the original material from update 2.glb completely intact
+              // Just store a copy for highlighting restoration
+              child.userData.originalMaterial = child.material.clone();
+            } else {
+              // For regular units: apply the blue default color
+              child.material = new MeshStandardMaterial({ 
+                color: 0x4682b4, 
+                metalness: 0.1, 
+                roughness: 0.7 
+              });
+              child.userData.originalMaterial = child.material.clone();
+            }
           }
-          // Store original material for highlighting
-          child.userData.originalMaterial = child.material.clone();
+          
+          // For non-unit, non-bridge models, keep original materials
+          if (!isUnit && !isBridge) {
+            child.userData.originalMaterial = child.material.clone();
+          }
         }
       });
       
@@ -91,10 +116,11 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   // List of models to load - now including all available models
   const modelsToLoad = [
     'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
-    'b1.glb', 'b2.glb',
+    'b1.glb',
     'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
     'e1.glb', 'e2.glb', 'e3.glb',
-    'a bridge.glb', 'b bridge.glb', 'c bridge 1.glb', 'c bridge 2.glb'
+    'a bridge.glb', 'b bridge.glb', 'c bridge 1.glb', 'c bridge 2.glb',
+    'update 2.glb'
   ];
   
   const handleModelLoad = useCallback((model: LoadedModel) => {
@@ -128,17 +154,27 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
     object.traverse((child) => {
       if (child instanceof Mesh && child.userData.originalMaterial) {
         if (highlight || isSelected) {
-          // Use green for available units, red for unavailable units
-          const color = isAvailable ? 0x22c55e : 0xdc2626; // Bright green or bright red
-          child.material = new MeshStandardMaterial({ 
-            color, 
-            metalness: 0.3, 
-            roughness: 0.4,
-            emissive: color,
-            emissiveIntensity: isSelected ? 0.15 : 0.08 // Glow effect
-          });
+          // Create a copy of the original material to modify
+          const highlightMaterial = child.userData.originalMaterial.clone();
+          
+          // Add highlight effect while preserving original textures
+          const highlightColor = isAvailable ? 0x7fb08a : 0xb91c1c; // Sage green or red
+          
+          // Apply emissive glow effect instead of changing base color
+          highlightMaterial.emissive.setHex(highlightColor);
+          highlightMaterial.emissiveIntensity = isSelected ? 0.15 : 0.08;
+          
+          // Slightly adjust other properties for visibility
+          if (highlightMaterial.metalness !== undefined) {
+            highlightMaterial.metalness = Math.min(highlightMaterial.metalness + 0.2, 1.0);
+          }
+          if (highlightMaterial.roughness !== undefined) {
+            highlightMaterial.roughness = Math.max(highlightMaterial.roughness - 0.1, 0.0);
+          }
+          
+          child.material = highlightMaterial;
         } else {
-          // Reset to original material
+          // Reset to original material (preserves all original textures and properties)
           child.material = child.userData.originalMaterial.clone();
         }
         child.material.needsUpdate = true;
@@ -156,8 +192,8 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
         
         // Enhanced scale effect with time-based transitions (more subtle)
         const baseScale = 1;
-        const hoverScale = 1.02;  // Reduced from 1.05 to 1.02 (2% increase)
-        const selectedScale = 1.04; // Reduced from 1.08 to 1.04 (4% increase)
+        const hoverScale = 1.01;  // Reduced from 1.02 to 1.01 (1% increase)
+        const selectedScale = 1.02; // Reduced from 1.04 to 1.02 (2% increase)
         
         let targetScale = baseScale;
         if (isSelected) targetScale = selectedScale;
@@ -257,10 +293,10 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
         />
       ))}
       
-      {/* Base plane */}
+      {/* Base plane - Scaled 300x for infinite horizon effect */}
       <mesh receiveShadow position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#e0e0e0" />
+        <planeGeometry args={[6000, 6000]} />
+        <meshStandardMaterial color="#d0d0d0" transparent opacity={0.8} />
       </mesh>
 
       {/* Render all loaded models */}
