@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, AlertTriangle, Home, Wrench } from 'lucide-react';
 import { UnitData } from '../types';
@@ -14,6 +14,9 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
   unitData,
   onClose 
 }) => {
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [useIframe, setUseIframe] = useState(false);
+  
   if (!selectedUnit) return null;
   
   const data = unitData[selectedUnit];
@@ -29,7 +32,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
     // Legacy fallback: Special cases for units with specific floorplans
     // This will be removed once Column E is populated in the spreadsheet
     if (unitName.toLowerCase() === 'b1' || unitName.toLowerCase() === 'b2' || unitName.toLowerCase() === 'c13') {
-      const googleDriveUrl = 'https://drive.google.com/uc?export=view&id=1qzM6Y6tOdFa3pEwaX5rxyUvPrIzCwoYv';
+      const googleDriveUrl = 'https://drive.google.com/uc?export=view&id=1qzM6Y6tOdFa3pEwaX5rxyUvPrIzCkoYv';
       console.log(`📋 Using legacy Google Drive URL for ${unitName} (add to Column E to override):`, googleDriveUrl);
       return googleDriveUrl;
     }
@@ -41,12 +44,53 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
   };
   
   const floorPlanUrl = getFloorPlanUrl(selectedUnit, data);
+  
+  // Convert Google Drive uc URL to iframe URL if needed
+  const getIframeUrl = (url: string): string => {
+    const match = url.match(/\/uc\?export=view&id=([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    return url;
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.currentTarget;
+    const url = target.src;
+    
+    console.error(`🖼️ Image failed to load for ${selectedUnit}:`, url);
+    console.error('Error details:', e);
+    
+    // Check if this is a Google Drive URL
+    if (url.includes('drive.google.com/uc')) {
+      console.log('🔄 Google Drive direct image failed, trying iframe approach...');
+      setImageError('Google Drive direct access blocked (CORS policy changed in 2024)');
+      setUseIframe(true);
+      return; // Don't set fallback image yet
+    }
+    
+    // For other URLs, set the fallback
+    setImageError(`Failed to load: ${url}`);
+    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTZiNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkZsb29yIFBsYW4gTm90IEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+    target.alt = 'Floor plan not available';
+  };
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.log(`✅ Image loaded successfully for ${selectedUnit}:`, e.currentTarget.src);
+    setImageError(null);
+    setUseIframe(false);
+  };
 
   // Handle cases where unit data might not be available
   const size = data?.size || 'N/A';
   const availability = data?.availability || 'Unknown';
   const amenities = data?.amenities || 'None listed';
   const isAvailable = availability.toLowerCase().includes('available') || availability.toLowerCase() === 'true';
+
+  // Determine if we should use iframe for Google Drive
+  const isGoogleDriveUrl = floorPlanUrl.includes('drive.google.com');
+  const shouldUseIframe = useIframe && isGoogleDriveUrl;
+  const iframeUrl = shouldUseIframe ? getIframeUrl(floorPlanUrl) : '';
 
   return (
     <AnimatePresence>
@@ -172,17 +216,51 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
               transition={{ delay: 0.3, duration: 0.3 }}
             >
               <h3 className="text-lg md:text-xl font-medium text-gray-800 mb-3">Floor Plan</h3>
+              
+              {/* Debug info for Google Drive URLs */}
+              {imageError && isGoogleDriveUrl && (
+                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                  <strong>Debug:</strong> {imageError}
+                  {shouldUseIframe && <div>→ Trying iframe method...</div>}
+                </div>
+              )}
+              
               <div className="border border-gray-200 border-opacity-90 rounded-lg overflow-hidden shadow-sm bg-white bg-opacity-100">
-                <img 
-                  src={floorPlanUrl}
-                  alt={`Floor plan for Unit ${selectedUnit}`}
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTZiNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkZsb29yIFBsYW4gTm90IEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
-                    e.currentTarget.alt = 'Floor plan not available';
-                  }}
-                />
+                {shouldUseIframe ? (
+                  <iframe 
+                    src={iframeUrl}
+                    title={`Floor plan for Unit ${selectedUnit}`}
+                    className="w-full h-96 border-0"
+                    onError={() => {
+                      console.error(`🖼️ Iframe also failed for ${selectedUnit}:`, iframeUrl);
+                      setImageError('Google Drive file cannot be displayed');
+                      setUseIframe(false);
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src={floorPlanUrl}
+                    alt={`Floor plan for Unit ${selectedUnit}`}
+                    className="w-full h-auto"
+                    onError={handleImageError}
+                    onLoad={handleImageLoad}
+                  />
+                )}
               </div>
+              
+              {/* Show direct link for Google Drive files */}
+              {isGoogleDriveUrl && (
+                <div className="mt-2 text-xs text-gray-500">
+                  <a 
+                    href={floorPlanUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Open original file in Google Drive
+                  </a>
+                </div>
+              )}
             </motion.div>
           </div>
 
