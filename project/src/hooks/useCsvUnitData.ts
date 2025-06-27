@@ -103,6 +103,8 @@ export const useCsvUnitData = (csvUrl: string) => {
             row['Image'] ||
             row['Image URL'] ||
             row['Link'] ||
+            row['Column 1'] ||         // Google Sheets default column name
+            row['Column E'] ||         // Alternative default names
             ''
           ).toString().trim();
 
