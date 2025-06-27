@@ -94,14 +94,62 @@ export const useCsvUnitData = (csvUrl: string) => {
             'None listed'
           ).toString().trim();
 
+          // Handle floorplan URL from Column E (or similar columns)
+          const floorPlanRaw = (
+            row['FloorPlanUrl'] ||     // Column E header name
+            row['FloorPlan'] ||        // Alternative header names
+            row['Floor Plan'] ||
+            row['Floorplan Url'] ||
+            row['Image'] ||
+            row['Image URL'] ||
+            row['Link'] ||
+            ''
+          ).toString().trim();
+
+          // Convert Google Drive sharing links to direct image URLs
+          const convertGoogleDriveUrl = (url: string): string => {
+            if (!url || url === '') return '';
+            
+            // If it's already a direct Google Drive URL, use it
+            if (url.includes('drive.google.com/uc?')) {
+              return url;
+            }
+            
+            // Convert sharing URL to direct URL
+            if (url.includes('drive.google.com/file/d/')) {
+              const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+              if (fileIdMatch && fileIdMatch[1]) {
+                const fileId = fileIdMatch[1];
+                const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                console.log(`🔗 Converted Google Drive URL for ${unitName}: ${url} -> ${directUrl}`);
+                return directUrl;
+              }
+            }
+            
+            // If it's any other URL (direct image links, etc.), use as-is
+            if (url.startsWith('http')) {
+              console.log(`🔗 Using direct URL for ${unitName}: ${url}`);
+              return url;
+            }
+            
+            // If it's not a URL, return empty
+            console.log(`⚠️ Invalid URL format for ${unitName}: ${url}`);
+            return '';
+          };
+
+          const floorPlanUrl = convertGoogleDriveUrl(floorPlanRaw);
+
           if (unitName) {
             unitDataMap[unitName] = {
               name: unitName,
               size: size,
               availability: availability,
-              amenities: amenities
+              amenities: amenities,
+              ...(floorPlanUrl && { floorPlanUrl: floorPlanUrl }) // Only add if URL exists
             };
-            console.log(`✓ Mapped unit: ${unitName} -> Available: ${availability} (from: "${availableValue}")`);
+            
+            const floorPlanStatus = floorPlanUrl ? '📋 with floorplan' : '';
+            console.log(`✓ Mapped unit: ${unitName} -> Available: ${availability} (from: "${availableValue}") ${floorPlanStatus}`);
           } else {
             console.log(`⚠️ Skipping row ${index} - no unit name found`);
           }

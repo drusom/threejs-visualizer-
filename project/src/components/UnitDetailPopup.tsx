@@ -20,18 +20,24 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
   
   // Use floorPlanUrl from unit data if available, otherwise use default mapping
   const getFloorPlanUrl = (unitName: string, unitData: UnitData): string => {
-    // First check if unit data has a specific floorPlanUrl
+    // First check if unit data has a specific floorPlanUrl from CSV (Column E)
     if (unitData?.floorPlanUrl) {
+      console.log(`📋 Using floorplan from CSV Column E for ${unitName}:`, unitData.floorPlanUrl);
       return unitData.floorPlanUrl;
     }
     
-    // Special cases for units with specific floorplans (now using Google Drive)
+    // Legacy fallback: Special cases for units with specific floorplans
+    // This will be removed once Column E is populated in the spreadsheet
     if (unitName.toLowerCase() === 'b1' || unitName.toLowerCase() === 'b2' || unitName.toLowerCase() === 'c13') {
-      return 'https://drive.google.com/uc?export=view&id=1qzM6Y6tOdFa3pEwaX5rxyUvPrIzCwoYv';
+      const googleDriveUrl = 'https://drive.google.com/uc?export=view&id=1qzM6Y6tOdFa3pEwaX5rxyUvPrIzCwoYv';
+      console.log(`📋 Using legacy Google Drive URL for ${unitName} (add to Column E to override):`, googleDriveUrl);
+      return googleDriveUrl;
     }
     
-    // Default naming convention for other units
-    return `/floorplans/${unitName.toLowerCase()}.png`;
+    // Default naming convention for other units (will show "not available" placeholder)
+    const defaultUrl = `/floorplans/${unitName.toLowerCase()}.png`;
+    console.log(`📋 Using default local path for ${unitName} (add URL to Column E for floorplan):`, defaultUrl);
+    return defaultUrl;
   };
   
   const floorPlanUrl = getFloorPlanUrl(selectedUnit, data);
