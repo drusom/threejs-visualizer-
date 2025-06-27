@@ -217,14 +217,6 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
             >
               <h3 className="text-lg md:text-xl font-medium text-gray-800 mb-3">Floor Plan</h3>
               
-              {/* Debug info for Google Drive URLs */}
-              {imageError && isGoogleDriveUrl && (
-                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                  <strong>Debug:</strong> {imageError}
-                  {shouldUseIframe && <div>→ Trying iframe method...</div>}
-                </div>
-              )}
-              
               <div className="border border-gray-200 border-opacity-90 rounded-lg overflow-hidden shadow-sm bg-white bg-opacity-100">
                 {shouldUseIframe ? (
                   <iframe 
