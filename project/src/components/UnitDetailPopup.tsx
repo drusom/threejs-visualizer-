@@ -18,17 +18,23 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
   
   const data = unitData[selectedUnit];
   
-  // Custom floorplan mapping for specific units
-  const getFloorPlanUrl = (unitName: string): string => {
-    // Special case: b2 unit uses the f280.png floorplan
-    if (unitName.toLowerCase() === 'b2') {
+  // Use floorPlanUrl from unit data if available, otherwise use default mapping
+  const getFloorPlanUrl = (unitName: string, unitData: UnitData): string => {
+    // First check if unit data has a specific floorPlanUrl
+    if (unitData?.floorPlanUrl) {
+      return unitData.floorPlanUrl;
+    }
+    
+    // Special cases for units with specific floorplans
+    if (unitName.toLowerCase() === 'b2' || unitName.toLowerCase() === 'c13') {
       return '/floorplans/f280.png';
     }
+    
     // Default naming convention for other units
     return `/floorplans/${unitName.toLowerCase()}.png`;
   };
   
-  const floorPlanUrl = getFloorPlanUrl(selectedUnit);
+  const floorPlanUrl = getFloorPlanUrl(selectedUnit, data);
 
   // Handle cases where unit data might not be available
   const size = data?.size || 'N/A';

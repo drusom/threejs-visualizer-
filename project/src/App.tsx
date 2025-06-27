@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { UnitWarehouse } from './components/UnitWarehouse';
 import UnitDetailPopup from './components/UnitDetailPopup';
+import { FilterDropdown } from './components/FilterDropdown';
 import { useCsvUnitData } from './hooks/useCsvUnitData';
 import * as THREE from 'three';
 
@@ -43,7 +44,7 @@ const FALLBACK_UNIT_DATA = {
   'a5': { name: 'a5', size: '1,200 sq ft', availability: 'Available', amenities: 'Standard package' },
   'a6': { name: 'a6', size: '1,200 sq ft', availability: 'Occupied', amenities: 'Standard package' },
   'b1': { name: 'b1', size: '1,500 sq ft', availability: 'Available', amenities: 'Premium package' },
-  'b2': { name: 'b2', size: '1,500 sq ft', availability: 'Available', amenities: 'Premium package' },
+  'b2': { name: 'b2', size: '1,500 sq ft', availability: 'Available', amenities: 'Premium package', floorPlanUrl: '/floorplans/f280.png' },
   'c1': { name: 'c1', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
   'c2': { name: 'c2', size: '900 sq ft', availability: 'Occupied', amenities: 'Basic package' },
   'c3': { name: 'c3', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
@@ -56,7 +57,7 @@ const FALLBACK_UNIT_DATA = {
   'c10': { name: 'c10', size: '900 sq ft', availability: 'Occupied', amenities: 'Basic package' },
   'c11': { name: 'c11', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
   'c12': { name: 'c12', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
-  'c13': { name: 'c13', size: '900 sq ft', availability: 'Available', amenities: 'Basic package' },
+  'c13': { name: 'c13', size: '900 sq ft', availability: 'Available', amenities: 'Basic package', floorPlanUrl: '/floorplans/f280.png' },
   'e1': { name: 'e1', size: '2,000 sq ft', availability: 'Available', amenities: 'Executive package' },
   'e2': { name: 'e2', size: '2,000 sq ft', availability: 'Available', amenities: 'Executive package' },
   'e3': { name: 'e3', size: '2,000 sq ft', availability: 'Occupied', amenities: 'Executive package' },
@@ -145,6 +146,7 @@ const DetailsSidebar: React.FC<{
 function App() {
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [filterHoveredUnit, setFilterHoveredUnit] = useState<string | null>(null);
   
   // Use new CSV-based data fetching
   const { data: csvUnitData, loading: isUnitDataLoading, error } = useCsvUnitData(CSV_URL);
@@ -231,6 +233,7 @@ function App() {
             onUnitSelect={handleUnitSelect}
             selectedUnit={selectedUnit}
             unitData={effectiveUnitData}
+            filterHoveredUnit={filterHoveredUnit}
           />
           
           {/* HDRI Environment with error handling */}
@@ -247,21 +250,16 @@ function App() {
           <CameraController selectedUnit={selectedUnit} />
         </Canvas>
         
-        {/* White vignette effect */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `radial-gradient(ellipse at center, 
-              transparent 15%, 
-              rgba(255, 255, 255, 0.2) 40%, 
-              rgba(255, 255, 255, 0.6) 70%, 
-              rgba(255, 255, 255, 0.9) 90%, 
-              rgba(255, 255, 255, 1) 100%)`
-          }}
-        />
-        
         {/* Ground plane */}
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-gray-200 to-transparent pointer-events-none" />
+        
+        {/* Filter Dropdown */}
+        <FilterDropdown
+          unitData={effectiveUnitData}
+          onUnitHover={setFilterHoveredUnit}
+          onUnitSelect={handleUnitSelect}
+          selectedUnit={selectedUnit}
+        />
         
         {/* Dynamic Details Sidebar */}
         <DetailsSidebar

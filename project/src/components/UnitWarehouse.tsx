@@ -8,12 +8,17 @@ interface UnitWarehouseProps {
   onUnitSelect: (unitName: string) => void;
   selectedUnit: string | null;
   unitData: Record<string, UnitData>;
+  filterHoveredUnit?: string | null; // For highlighting from filter dropdown
 }
 
 // Helper functions to categorize models
 const isUnitFile = (fileName: string): boolean => {
   // Special case: "update 2.glb" should act as b2 unit
   if (fileName === 'update 2.glb') {
+    return true;
+  }
+  // Special case: "update3.glb" should act as b1 unit
+  if (fileName === 'update3.glb') {
     return true;
   }
   return /^[a-z]\d+\.glb$/i.test(fileName);
@@ -28,6 +33,10 @@ const getUnitName = (fileName: string): string => {
   // Special case: "update 2.glb" maps to "b2" for unit data
   if (fileName === 'update 2.glb') {
     return 'b2';
+  }
+  // Special case: "update3.glb" maps to "b1" for unit data
+  if (fileName === 'update3.glb') {
+    return 'b1';
   }
   // For regular unit files, remove .glb extension
   return fileName.replace('.glb', '');
@@ -61,8 +70,8 @@ const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => 
             });
           } else if (isUnit) {
             // For units: preserve original materials but ensure they're MeshStandardMaterial
-            if (fileName === 'update 2.glb') {
-              // Keep the original material from update 2.glb completely intact
+            if (fileName === 'update 2.glb' || fileName === 'update3.glb') {
+              // Keep the original material from update files completely intact
               // Just store a copy for highlighting restoration
               child.userData.originalMaterial = child.material.clone();
             } else {
@@ -98,7 +107,8 @@ const SingleModel: React.FC<{ fileName: string; onLoad: (model: LoadedModel) => 
 export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({ 
   onUnitSelect,
   selectedUnit,
-  unitData
+  unitData,
+  filterHoveredUnit
 }) => {
   const groupRef = useRef<Group>(null);
   const [loadedModels, setLoadedModels] = useState<LoadedModel[]>([]);
@@ -116,7 +126,7 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   // List of models to load - now including all available models
   const modelsToLoad = [
     'a1.glb', 'a2.glb', 'a3.glb', 'a4.glb', 'a5.glb', 'a6.glb',
-    'b1.glb',
+    'update3.glb', // This replaces b1.glb but maps to 'b1' unit data
     'c1.glb', 'c2.glb', 'c3.glb', 'c4.glb', 'c5.glb', 'c6.glb', 'c7.glb', 'c8.glb', 'c9.glb', 'c10.glb', 'c11.glb', 'c12.glb', 'c13.glb',
     'e1.glb', 'e2.glb', 'e3.glb',
     'a bridge.glb', 'b bridge.glb', 'c bridge 1.glb', 'c bridge 2.glb',
@@ -160,16 +170,16 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
           // Add highlight effect while preserving original textures
           const highlightColor = isAvailable ? 0x7fb08a : 0xb91c1c; // Sage green or red
           
-          // Apply emissive glow effect instead of changing base color
+          // Apply much brighter emissive glow effect
           highlightMaterial.emissive.setHex(highlightColor);
-          highlightMaterial.emissiveIntensity = isSelected ? 0.15 : 0.08;
+          highlightMaterial.emissiveIntensity = isSelected ? 0.6 : 0.4;
           
-          // Slightly adjust other properties for visibility
+          // More dramatic adjustments for enhanced visibility
           if (highlightMaterial.metalness !== undefined) {
-            highlightMaterial.metalness = Math.min(highlightMaterial.metalness + 0.2, 1.0);
+            highlightMaterial.metalness = Math.min(highlightMaterial.metalness + 0.4, 1.0);
           }
           if (highlightMaterial.roughness !== undefined) {
-            highlightMaterial.roughness = Math.max(highlightMaterial.roughness - 0.1, 0.0);
+            highlightMaterial.roughness = Math.max(highlightMaterial.roughness - 0.3, 0.0);
           }
           
           child.material = highlightMaterial;
@@ -186,14 +196,14 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
   useEffect(() => {
     loadedModels.forEach((model) => {
       if (model.isUnit) {
-        const isHovered = hoveredUnit === model.name;
+        const isHovered = hoveredUnit === model.name || filterHoveredUnit === model.name;
         const isSelected = selectedUnit === model.name;
         applyHighlight(model.object, isHovered, isSelected, model.name);
         
-        // Enhanced scale effect with time-based transitions (more subtle)
+        // Enhanced scale effect with time-based transitions (subtle but visible)
         const baseScale = 1;
-        const hoverScale = 1.01;  // Reduced from 1.02 to 1.01 (1% increase)
-        const selectedScale = 1.02; // Reduced from 1.04 to 1.02 (2% increase)
+        const hoverScale = 1.02;  // Subtle but noticeable (2% increase)
+        const selectedScale = 1.04; // More noticeable for selection (4% increase)
         
         let targetScale = baseScale;
         if (isSelected) targetScale = selectedScale;
@@ -209,7 +219,7 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = ({
         }
       }
     });
-  }, [hoveredUnit, selectedUnit, loadedModels, applyHighlight]);
+  }, [hoveredUnit, selectedUnit, filterHoveredUnit, loadedModels, applyHighlight]);
 
   // Smooth time-based animations using useFrame
   useFrame((state, delta) => {
