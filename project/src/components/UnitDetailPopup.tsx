@@ -25,9 +25,9 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
       return unitData.floorPlanUrl;
     }
     
-    // Special cases for units with specific floorplans
-    if (unitName.toLowerCase() === 'b2' || unitName.toLowerCase() === 'c13') {
-      return '/floorplans/f280.png';
+    // Special cases for units with specific floorplans (now using Google Drive)
+    if (unitName.toLowerCase() === 'b1' || unitName.toLowerCase() === 'b2' || unitName.toLowerCase() === 'c13') {
+      return 'https://drive.google.com/uc?export=view&id=1qzM6Y6tOdFa3pEwaX5rxyUvPrIzCwoYv';
     }
     
     // Default naming convention for other units
