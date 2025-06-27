@@ -217,6 +217,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
             >
               <h3 className="text-lg md:text-xl font-medium text-gray-800 mb-3">Floor Plan</h3>
               
+              {/* Clean UI - no debug messages displayed to users */}
               <div className="border border-gray-200 border-opacity-90 rounded-lg overflow-hidden shadow-sm bg-white bg-opacity-100">
                 {shouldUseIframe ? (
                   <iframe 
@@ -224,7 +225,7 @@ const UnitDetailPopup: React.FC<UnitDetailPopupProps> = ({
                     title={`Floor plan for Unit ${selectedUnit}`}
                     className="w-full h-96 border-0"
                     onError={() => {
-                      console.error(`🖼️ Iframe also failed for ${selectedUnit}:`, iframeUrl);
+                      console.error(`🖼️ Google Drive iframe failed for ${selectedUnit}:`, iframeUrl);
                       setImageError('Google Drive file cannot be displayed');
                       setUseIframe(false);
                     }}
